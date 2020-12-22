@@ -1,6 +1,7 @@
 """This file contains main code for images clustering"""
 import os
 from argparse import ArgumentParser
+from time import time
 
 import cv2
 import numpy as np
@@ -11,10 +12,13 @@ from sklearn.cluster import MiniBatchKMeans
 
 def main(args_):
     """Split images into clusters"""
+    start = time()
     model = InceptionV3(include_top=False)  # load model
 
     features_list = []
     files = os.listdir(args_.images)
+    print('Started features extraction')
+    features_extr_start = time()
     for f in files:
         pth = os.path.join(args_.images, f)  # get path to image
 
@@ -29,10 +33,19 @@ def main(args_):
         features_list.append(feature.flatten())
 
     features_list = np.array(features_list)
+    features_extr_end = time()
+    print('Features extracted')
+    print(f'Features extraction time: '
+          f'{features_extr_end - features_extr_start}')
 
     # run KMeans for extracted features
+    print('Started clustering')
+    clustering_start = time()
     kmeans = MiniBatchKMeans(n_clusters=args_.clusters,
                              random_state=0).fit_predict(features_list)
+    clustering_end = time()
+    print('Clustering finished')
+    print(f'Clustering time: {clustering_end - clustering_start}')
 
     # generate output directory for each cluster
     output_dirs = [os.path.join(args_.destination, str(i))
@@ -49,6 +62,9 @@ def main(args_):
             cv2.imwrite(output_pth, img)
         else:
             print(f'Can\'t read image f{pth}')
+
+    end = time()
+    print(f'Full time: {end - start}')
 
 
 if __name__ == '__main__':
